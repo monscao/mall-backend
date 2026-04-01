@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: mall-backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/shop_db
+    username: monscao
+    password:
+    driver-class-name: org.postgresql.Driver
+  sql:
+    init:
+      mode: always
+      encoding: UTF-8
+
+server:
+  port: 8080
+
+auth:
+  jwt-secret: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+  token-expiration-minutes: 120
