@@ -2,7 +2,7 @@ spring:
   application:
     name: mall-backend
   datasource:
-    url: jdbc:postgresql://localhost:5432/shop_db
+    url: jdbc:postgresql://localhost:5432/mall_db
     username: monscao
     password:
     driver-class-name: org.postgresql.Driver
@@ -10,6 +10,10 @@ spring:
     init:
       mode: always
       encoding: UTF-8
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 50MB
 
 server:
   port: 8080

@@ -79,6 +79,8 @@ create table if not exists product (
     slug varchar(150) not null unique,
     brand varchar(100),
     cover_image varchar(255),
+    cover_image_key varchar(255),
+    cover_image_name varchar(255),
     price_from numeric(10, 2) not null,
     price_to numeric(10, 2) not null,
     market_price numeric(10, 2),
@@ -108,4 +110,53 @@ create table if not exists product_sku (
     created_at timestamp not null default current_timestamp,
     constraint fk_product_sku_product
         foreign key (product_id) references product (id) on delete cascade
+);
+
+create table if not exists product_asset (
+    id bigserial primary key,
+    product_id bigint not null,
+    image_url varchar(255) not null,
+    image_key varchar(255),
+    original_name varchar(255),
+    alt_text varchar(255),
+    sort_order integer not null default 0,
+    created_at timestamp not null default current_timestamp,
+    constraint fk_product_asset_product
+        foreign key (product_id) references product (id) on delete cascade
+);
+
+create table if not exists customer_order (
+    id bigserial primary key,
+    order_no varchar(40) not null unique,
+    user_id bigint not null,
+    contact_name varchar(100) not null,
+    contact_phone varchar(40) not null,
+    shipping_address text not null,
+    note text,
+    payment_method varchar(30) not null,
+    status varchar(30) not null default 'PAID',
+    subtotal numeric(10, 2) not null,
+    shipping_fee numeric(10, 2) not null default 0,
+    total_amount numeric(10, 2) not null,
+    created_at timestamp not null default current_timestamp,
+    constraint fk_customer_order_user
+        foreign key (user_id) references app_user (id) on delete restrict
+);
+
+create table if not exists customer_order_item (
+    id bigserial primary key,
+    order_id bigint not null,
+    product_id bigint,
+    sku_code varchar(80) not null,
+    product_name varchar(150) not null,
+    sku_name varchar(150) not null,
+    cover_image varchar(255),
+    unit_price numeric(10, 2) not null,
+    quantity integer not null,
+    line_total numeric(10, 2) not null,
+    created_at timestamp not null default current_timestamp,
+    constraint fk_customer_order_item_order
+        foreign key (order_id) references customer_order (id) on delete cascade,
+    constraint fk_customer_order_item_product
+        foreign key (product_id) references product (id) on delete set null
 );

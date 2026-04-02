@@ -19,7 +19,7 @@ mvn spring-boot:run
 
 ## Database
 
-- PostgreSQL database: `shop_db`
+- PostgreSQL database: `mall_db`
 - Default local user: `monscao`
 - Health endpoint: `GET /api/system/health`
 - Homepage aggregate endpoint: `GET /api/home`

@@ -49,7 +49,7 @@ on conflict (user_id, permission_id) do nothing;
 insert into category (code, name, description, icon, banner_image, sort_order, featured)
 values
     ('phones', 'Phones', 'Popular flagship and mid-range smartphones', 'smartphone', 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1200&q=80', 1, true),
-    ('laptops', 'Laptops', 'Thin-and-light laptops and creator notebooks', 'laptop', 'https://images.unsplash.com/photo-1517336714739-489689fd1ca8?auto=format&fit=crop&w=1200&q=80', 2, true),
+    ('laptops', 'Laptops', 'Thin-and-light laptops and creator notebooks', 'laptop', 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80', 2, true),
     ('audio', 'Audio', 'Headphones, speakers and listening accessories', 'headphones', 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=1200&q=80', 3, true),
     ('wearables', 'Wearables', 'Smart watches and fitness gear', 'watch', 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=1200&q=80', 4, false)
 on conflict (code) do update set
@@ -120,3 +120,25 @@ on conflict (sku_code) do update set
     stock = excluded.stock,
     cover_image = excluded.cover_image,
     is_default = excluded.is_default;
+
+insert into product_asset (product_id, image_url, alt_text, sort_order)
+select p.id, a.image_url, a.alt_text, a.sort_order
+from (
+    values
+        ('nova-x-pro', 'https://images.unsplash.com/photo-1512499617640-c74ae3a79d37?auto=format&fit=crop&w=1200&q=80', 'Nova X Pro lifestyle', 1),
+        ('nova-x-pro', 'https://images.unsplash.com/photo-1580910051074-3eb694886505?auto=format&fit=crop&w=1200&q=80', 'Nova X Pro in blue light', 2),
+        ('nova-x-pro', 'https://images.unsplash.com/photo-1567581935884-3349723552ca?auto=format&fit=crop&w=1200&q=80', 'Nova X Pro close-up', 3),
+        ('aerobook-14', 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80', 'AeroBook workspace', 1),
+        ('aerobook-14', 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=80', 'AeroBook desktop setup', 2),
+        ('aerobook-14', 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=1200&q=80', 'AeroBook keyboard detail', 3),
+        ('echobeat-pro', 'https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=1200&q=80', 'EchoBeat listening setup', 1),
+        ('echobeat-pro', 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=1200&q=80', 'EchoBeat premium finish', 2),
+        ('echobeat-pro', 'https://images.unsplash.com/photo-1507878866276-a947ef722fee?auto=format&fit=crop&w=1200&q=80', 'EchoBeat travel case', 3)
+) as a(product_slug, image_url, alt_text, sort_order)
+join product p on p.slug = a.product_slug
+where not exists (
+    select 1
+    from product_asset existing
+    where existing.product_id = p.id
+      and existing.image_url = a.image_url
+);
