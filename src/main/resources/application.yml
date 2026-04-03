@@ -2,13 +2,13 @@ spring:
   application:
     name: mall-backend
   datasource:
-    url: jdbc:postgresql://localhost:5432/mall_db
-    username: monscao
-    password:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/mall_db}
+    username: ${SPRING_DATASOURCE_USERNAME:monscao}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
     driver-class-name: org.postgresql.Driver
   sql:
     init:
-      mode: always
+      mode: ${SPRING_SQL_INIT_MODE:always}
       encoding: UTF-8
   servlet:
     multipart:
@@ -16,8 +16,11 @@ spring:
       max-request-size: 50MB
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 auth:
-  jwt-secret: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-  token-expiration-minutes: 120
+  jwt-secret: ${AUTH_JWT_SECRET:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+  token-expiration-minutes: ${AUTH_TOKEN_EXPIRATION_MINUTES:120}
+
+app:
+  upload-dir: ${APP_UPLOAD_DIR:uploads}

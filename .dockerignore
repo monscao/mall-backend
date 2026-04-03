@@ -1,0 +1,8 @@
+.git
+.github
+.idea
+.vscode
+target
+uploads
+docs
+.DS_Store

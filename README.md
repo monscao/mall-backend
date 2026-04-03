@@ -194,6 +194,73 @@ This project now runs:
 
 Latest local measured backend line coverage from `target/site/jacoco/jacoco.csv`: about `85.55%`.
 
+## Docker
+
+Build a backend image locally:
+
+```bash
+docker build -t mall-backend:local .
+```
+
+Useful runtime environment variables:
+
+- `SPRING_DATASOURCE_URL`
+- `SPRING_DATASOURCE_USERNAME`
+- `SPRING_DATASOURCE_PASSWORD`
+- `AUTH_JWT_SECRET`
+- `APP_UPLOAD_DIR`
+- `SERVER_PORT`
+
+The provided [`Dockerfile`](/Users/monscao/Documents/mall-backend/Dockerfile) stores uploads under `/app/uploads` inside the container.
+
+## Deployment
+
+This repo now includes a minimal production deployment skeleton in [`deploy/docker-compose.prod.yml`](/Users/monscao/Documents/mall-backend/deploy/docker-compose.prod.yml).
+
+Recommended first deployment path:
+
+1. Buy one Linux server and install Docker Engine + Docker Compose plugin.
+2. Clone this repo on the server.
+3. Copy [`deploy/.env.example`](/Users/monscao/Documents/mall-backend/deploy/.env.example) to `.env.prod` and replace the placeholder secrets.
+4. Set `BACKEND_IMAGE` and `FRONTEND_IMAGE` to the GitHub Container Registry image names you publish from the two repos.
+5. Run:
+
+```bash
+cd deploy
+docker compose --env-file .env.prod -f docker-compose.prod.yml pull
+docker compose --env-file .env.prod -f docker-compose.prod.yml up -d
+```
+
+The compose file starts:
+
+- `postgres`
+- `backend`
+- `frontend`
+
+The frontend container serves the React build with Nginx and proxies `/api/*` and `/uploads/*` to the backend container.
+
+## CI/CD
+
+Included GitHub Actions:
+
+- [`Backend CI`](/Users/monscao/Documents/mall-backend/.github/workflows/ci.yml): runs `mvn test` and validates the Docker build
+- [`Backend Publish`](/Users/monscao/Documents/mall-backend/.github/workflows/publish.yml): builds and pushes `ghcr.io/<owner>/mall-backend`
+- [`Deploy To Server`](/Users/monscao/Documents/mall-backend/.github/workflows/deploy.yml): manually deploys the published frontend/backend images to your server
+
+Secrets needed for the deploy workflow:
+
+- `DEPLOY_HOST`
+- `DEPLOY_USER`
+- `DEPLOY_SSH_KEY`
+- `DEPLOY_PATH`
+- `GHCR_USERNAME`
+- `GHCR_TOKEN`
+- `POSTGRES_DB`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `AUTH_JWT_SECRET`
+- `FRONTEND_PORT`
+
 ## Frontend Pairing
 
 The matching frontend lives at:
