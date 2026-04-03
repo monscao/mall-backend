@@ -1,14 +1,7 @@
 name: Backend Deploy
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
-
-concurrency:
-  group: mall-production-deploy
-  cancel-in-progress: true
 
 jobs:
   deploy:

@@ -245,7 +245,7 @@ Included GitHub Actions:
 
 - [`Backend CI`](/Users/monscao/Documents/mall-backend/.github/workflows/ci.yml): runs `mvn test` and validates the Docker build
 - [`Backend Publish`](/Users/monscao/Documents/mall-backend/.github/workflows/publish.yml): builds and pushes `ghcr.io/<owner>/mall-backend`
-- [`Backend Deploy`](/Users/monscao/Documents/mall-backend/.github/workflows/deploy.yml): on push to `main`, SSHes into the AWS server and runs `~/bin/deploy-mall.sh`
+- [`Backend Deploy`](/Users/monscao/Documents/mall-backend/.github/workflows/deploy.yml): optional manual SSH deploy workflow
 
 Secrets needed for the deploy workflow:
 
@@ -257,6 +257,7 @@ Deployment note:
 
 - The server already contains both repos under `~/apps`
 - The deploy script at `~/bin/deploy-mall.sh` pulls `main` from both repos and rebuilds the running containers
+- Production auto-deploy is handled on the AWS server itself by a scheduled pull script so GitHub does not need inbound SSH access
 
 ## Frontend Pairing
 
