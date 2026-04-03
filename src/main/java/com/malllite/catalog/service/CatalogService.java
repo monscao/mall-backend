@@ -170,12 +170,36 @@ public class CatalogService {
                 firstNonBlank(request.marketPrice(), existing.marketPrice()),
                 firstNonBlank(request.stockStatus(), existing.stockStatus()),
                 request.featured() != null ? request.featured() : existing.featured(),
-                request.onShelf() != null ? request.onShelf() : existing.onShelf()
+                existing.onShelf()
         );
 
         Product updated = catalogRepository.findProductById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
         return toAdminProductRowResponse(updated);
+    }
+
+    public AdminProductRowResponse updateProductShelf(Long productId, boolean onShelf) {
+        Product existing = catalogRepository.findProductById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+        catalogRepository.updateProduct(
+                productId,
+                existing.categoryId(),
+                existing.name(),
+                existing.subtitle(),
+                existing.slug(),
+                existing.brand(),
+                existing.priceFrom(),
+                existing.priceTo(),
+                existing.marketPrice(),
+                existing.stockStatus(),
+                existing.featured(),
+                onShelf
+        );
+
+        return catalogRepository.findProductById(productId)
+                .map(this::toAdminProductRowResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
     }
 
     public void deleteProduct(Long productId) {

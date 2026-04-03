@@ -5,6 +5,7 @@ import java.util.List;
 public record AuthUser(
         Long userId,
         String username,
-        List<String> roleCodes
+        List<String> roleCodes,
+        List<String> permissionCodes
 ) {
 }

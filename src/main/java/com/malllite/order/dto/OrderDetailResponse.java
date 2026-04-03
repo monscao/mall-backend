@@ -16,6 +16,7 @@ public record OrderDetailResponse(
         String totalAmount,
         Integer totalQuantity,
         String createdAt,
+        Boolean customerActionable,
         List<OrderItemResponse> items
 ) {
 }

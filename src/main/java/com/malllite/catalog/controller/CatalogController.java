@@ -1,7 +1,9 @@
 package com.malllite.catalog.controller;
 
 import com.malllite.catalog.dto.AdminProductRowResponse;
+import com.malllite.auth.PermissionCodes;
 import com.malllite.auth.annotation.RequireRole;
+import com.malllite.auth.annotation.RequirePermission;
 import com.malllite.catalog.dto.CategoryResponse;
 import com.malllite.catalog.dto.CreateProductRequest;
 import com.malllite.catalog.dto.ProductCardResponse;
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.List;
 
 @RestController
@@ -62,33 +65,39 @@ public class CatalogController {
     }
 
     @PostMapping("/admin/products")
-    @RequireRole("ADMIN")
+    @RequirePermission(PermissionCodes.PRODUCT_WRITE)
     @ResponseStatus(HttpStatus.CREATED)
     public ProductDetailResponse createProduct(@Valid @RequestBody CreateProductRequest request) {
         return catalogService.createProduct(request);
     }
 
     @GetMapping("/admin/products")
-    @RequireRole("ADMIN")
+    @RequirePermission(PermissionCodes.PRODUCT_WRITE)
     public List<AdminProductRowResponse> listAdminProducts() {
         return catalogService.listAdminProducts();
     }
 
     @PutMapping("/admin/products/{productId}")
-    @RequireRole("ADMIN")
+    @RequirePermission(PermissionCodes.PRODUCT_WRITE)
     public AdminProductRowResponse updateProduct(@PathVariable Long productId, @RequestBody UpdateAdminProductRequest request) {
         return catalogService.updateProduct(productId, request);
     }
 
+    @PutMapping("/admin/products/{productId}/shelf")
+    @RequirePermission(PermissionCodes.PRODUCT_PUBLISH)
+    public AdminProductRowResponse updateProductShelf(@PathVariable Long productId, @RequestBody Map<String, Boolean> request) {
+        return catalogService.updateProductShelf(productId, Boolean.TRUE.equals(request.get("onShelf")));
+    }
+
     @DeleteMapping("/admin/products/{productId}")
-    @RequireRole("ADMIN")
+    @RequirePermission(PermissionCodes.PRODUCT_WRITE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteProduct(@PathVariable Long productId) {
         catalogService.deleteProduct(productId);
     }
 
     @PostMapping("/admin/uploads")
-    @RequireRole("ADMIN")
+    @RequirePermission(PermissionCodes.PRODUCT_UPLOAD)
     @ResponseStatus(HttpStatus.CREATED)
     public UploadResponse uploadImage(@RequestPart("file") MultipartFile file) throws IOException {
         StoredFile storedFile = fileStorageService.store(file);

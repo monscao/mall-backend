@@ -31,7 +31,7 @@ public class JwtTokenService {
         this.tokenExpirationMinutes = tokenExpirationMinutes;
     }
 
-    public String generateToken(Long userId, String username, List<String> roleCodes) {
+    public String generateToken(Long userId, String username, List<String> roleCodes, List<String> permissionCodes) {
         Instant now = Instant.now();
         Instant expiresAt = now.plus(tokenExpirationMinutes, ChronoUnit.MINUTES);
 
@@ -39,6 +39,7 @@ public class JwtTokenService {
                 .subject(username)
                 .claim("userId", userId)
                 .claim("roles", roleCodes)
+                .claim("permissions", permissionCodes)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiresAt))
                 .signWith(secretKey)
@@ -59,12 +60,16 @@ public class JwtTokenService {
                     claims.get("roles", List.class),
                     List.of()
             );
+            List<String> permissionCodes = Objects.requireNonNullElse(
+                    claims.get("permissions", List.class),
+                    List.of()
+            );
 
             if (userId == null || username == null || username.isBlank()) {
                 throw new UnauthorizedException("Invalid token payload");
             }
 
-            return new AuthUser(userId, username, roleCodes);
+            return new AuthUser(userId, username, roleCodes, permissionCodes);
         } catch (JwtException | IllegalArgumentException exception) {
             throw new UnauthorizedException("Invalid or expired token");
         }

@@ -1,7 +1,8 @@
 package com.malllite.permission.controller;
 
 import com.malllite.auth.annotation.RequireAuth;
-import com.malllite.auth.annotation.RequireRole;
+import com.malllite.auth.PermissionCodes;
+import com.malllite.auth.annotation.RequirePermission;
 import com.malllite.permission.dto.PermissionResponse;
 import com.malllite.permission.service.PermissionService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,7 +14,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/permissions")
 @RequireAuth
-@RequireRole("ADMIN")
+@RequirePermission(PermissionCodes.ROLE_READ)
 public class PermissionController {
 
     private final PermissionService permissionService;

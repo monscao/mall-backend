@@ -122,4 +122,34 @@ public class UserRepository {
                 });
         return result;
     }
+
+    public Map<Long, List<String>> findPermissionCodesByUserIds(List<Long> userIds) {
+        if (userIds.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<Long, List<String>> result = new HashMap<>();
+        namedParameterJdbcTemplate.query("""
+                select distinct access.user_id, access.code
+                from (
+                    select up.user_id, p.code
+                    from user_permission up
+                    join permission p on p.id = up.permission_id
+                    where up.user_id in (:userIds)
+                    union
+                    select ur.user_id, p.code
+                    from user_role ur
+                    join role_permission rp on rp.role_id = ur.role_id
+                    join permission p on p.id = rp.permission_id
+                    where ur.user_id in (:userIds)
+                ) access
+                order by access.user_id, access.code
+                """, new MapSqlParameterSource("userIds", userIds),
+                rs -> {
+                    Long userId = rs.getLong("user_id");
+                    result.computeIfAbsent(userId, ignored -> new ArrayList<>())
+                            .add(rs.getString("code"));
+                });
+        return result;
+    }
 }

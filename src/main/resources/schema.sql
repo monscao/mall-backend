@@ -96,6 +96,9 @@ create table if not exists product (
         foreign key (category_id) references category (id) on delete restrict
 );
 
+alter table product add column if not exists cover_image_key varchar(255);
+alter table product add column if not exists cover_image_name varchar(255);
+
 create table if not exists product_sku (
     id bigserial primary key,
     product_id bigint not null,
@@ -125,6 +128,35 @@ create table if not exists product_asset (
         foreign key (product_id) references product (id) on delete cascade
 );
 
+alter table product_asset add column if not exists image_key varchar(255);
+alter table product_asset add column if not exists original_name varchar(255);
+
+create table if not exists shopping_cart (
+    id bigserial primary key,
+    user_id bigint not null unique,
+    created_at timestamp not null default current_timestamp,
+    updated_at timestamp not null default current_timestamp,
+    constraint fk_shopping_cart_user
+        foreign key (user_id) references app_user (id) on delete cascade
+);
+
+create table if not exists shopping_cart_item (
+    id bigserial primary key,
+    cart_id bigint not null,
+    product_id bigint not null,
+    sku_id bigint not null,
+    quantity integer not null,
+    created_at timestamp not null default current_timestamp,
+    updated_at timestamp not null default current_timestamp,
+    constraint uk_shopping_cart_item_sku unique (cart_id, sku_id),
+    constraint fk_shopping_cart_item_cart
+        foreign key (cart_id) references shopping_cart (id) on delete cascade,
+    constraint fk_shopping_cart_item_product
+        foreign key (product_id) references product (id) on delete cascade,
+    constraint fk_shopping_cart_item_sku
+        foreign key (sku_id) references product_sku (id) on delete cascade
+);
+
 create table if not exists customer_order (
     id bigserial primary key,
     order_no varchar(40) not null unique,
@@ -134,14 +166,28 @@ create table if not exists customer_order (
     shipping_address text not null,
     note text,
     payment_method varchar(30) not null,
-    status varchar(30) not null default 'PAID',
+    status varchar(30) not null default 'PENDING_PAYMENT',
     subtotal numeric(10, 2) not null,
     shipping_fee numeric(10, 2) not null default 0,
     total_amount numeric(10, 2) not null,
+    paid_at timestamp,
+    processing_at timestamp,
+    shipped_at timestamp,
+    completed_at timestamp,
+    cancelled_at timestamp,
     created_at timestamp not null default current_timestamp,
+    updated_at timestamp not null default current_timestamp,
     constraint fk_customer_order_user
         foreign key (user_id) references app_user (id) on delete restrict
 );
+
+alter table customer_order alter column status set default 'PENDING_PAYMENT';
+alter table customer_order add column if not exists paid_at timestamp;
+alter table customer_order add column if not exists processing_at timestamp;
+alter table customer_order add column if not exists shipped_at timestamp;
+alter table customer_order add column if not exists completed_at timestamp;
+alter table customer_order add column if not exists cancelled_at timestamp;
+alter table customer_order add column if not exists updated_at timestamp not null default current_timestamp;
 
 create table if not exists customer_order_item (
     id bigserial primary key,

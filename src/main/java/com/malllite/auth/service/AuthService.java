@@ -46,8 +46,10 @@ public class AuthService {
         userRepository.assignRoleByCode(user.id(), DEFAULT_CUSTOMER_ROLE);
         List<String> roleCodes = userRepository.findRoleCodesByUserIds(List.of(user.id()))
                 .getOrDefault(user.id(), List.of());
+        List<String> permissionCodes = userRepository.findPermissionCodesByUserIds(List.of(user.id()))
+                .getOrDefault(user.id(), List.of());
 
-        return buildAuthResponse(user, roleCodes);
+        return buildAuthResponse(user, roleCodes, permissionCodes);
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -64,12 +66,14 @@ public class AuthService {
 
         List<String> roleCodes = userRepository.findRoleCodesByUserIds(List.of(user.id()))
                 .getOrDefault(user.id(), List.of());
+        List<String> permissionCodes = userRepository.findPermissionCodesByUserIds(List.of(user.id()))
+                .getOrDefault(user.id(), List.of());
 
-        return buildAuthResponse(user, roleCodes);
+        return buildAuthResponse(user, roleCodes, permissionCodes);
     }
 
-    private AuthResponse buildAuthResponse(User user, List<String> roleCodes) {
-        String token = jwtTokenService.generateToken(user.id(), user.username(), roleCodes);
+    private AuthResponse buildAuthResponse(User user, List<String> roleCodes, List<String> permissionCodes) {
+        String token = jwtTokenService.generateToken(user.id(), user.username(), roleCodes, permissionCodes);
         return new AuthResponse(user.id(), user.username(), token, roleCodes);
     }
 }

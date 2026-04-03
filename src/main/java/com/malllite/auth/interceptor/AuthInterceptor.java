@@ -1,6 +1,7 @@
 package com.malllite.auth.interceptor;
 
 import com.malllite.auth.annotation.RequireAuth;
+import com.malllite.auth.annotation.RequirePermission;
 import com.malllite.auth.annotation.RequireRole;
 import com.malllite.auth.context.AuthContext;
 import com.malllite.auth.dto.AuthUser;
@@ -34,7 +35,8 @@ public class AuthInterceptor implements HandlerInterceptor {
 
         boolean authRequired = requiresAuth(handlerMethod);
         String[] requiredRoles = requiredRoles(handlerMethod);
-        if (!authRequired && requiredRoles.length == 0) {
+        String[] requiredPermissions = requiredPermissions(handlerMethod);
+        if (!authRequired && requiredRoles.length == 0 && requiredPermissions.length == 0) {
             return true;
         }
 
@@ -48,6 +50,10 @@ public class AuthInterceptor implements HandlerInterceptor {
         AuthContext.setCurrentUser(authUser);
 
         if (requiredRoles.length > 0 && Arrays.stream(requiredRoles).noneMatch(authUser.roleCodes()::contains)) {
+            throw new ForbiddenException("Insufficient permissions");
+        }
+
+        if (requiredPermissions.length > 0 && Arrays.stream(requiredPermissions).noneMatch(authUser.permissionCodes()::contains)) {
             throw new ForbiddenException("Insufficient permissions");
         }
 
@@ -76,6 +82,16 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
 
         RequireRole classAnnotation = handlerMethod.getBeanType().getAnnotation(RequireRole.class);
+        return classAnnotation != null ? classAnnotation.value() : new String[0];
+    }
+
+    private String[] requiredPermissions(HandlerMethod handlerMethod) {
+        RequirePermission methodAnnotation = handlerMethod.getMethodAnnotation(RequirePermission.class);
+        if (methodAnnotation != null) {
+            return methodAnnotation.value();
+        }
+
+        RequirePermission classAnnotation = handlerMethod.getBeanType().getAnnotation(RequirePermission.class);
         return classAnnotation != null ? classAnnotation.value() : new String[0];
     }
 }

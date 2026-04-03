@@ -25,7 +25,13 @@ public class OrderRepository {
             rs.getBigDecimal("subtotal").toPlainString(),
             rs.getBigDecimal("shipping_fee").toPlainString(),
             rs.getBigDecimal("total_amount").toPlainString(),
-            rs.getTimestamp("created_at").toLocalDateTime()
+            rs.getTimestamp("paid_at") == null ? null : rs.getTimestamp("paid_at").toLocalDateTime(),
+            rs.getTimestamp("processing_at") == null ? null : rs.getTimestamp("processing_at").toLocalDateTime(),
+            rs.getTimestamp("shipped_at") == null ? null : rs.getTimestamp("shipped_at").toLocalDateTime(),
+            rs.getTimestamp("completed_at") == null ? null : rs.getTimestamp("completed_at").toLocalDateTime(),
+            rs.getTimestamp("cancelled_at") == null ? null : rs.getTimestamp("cancelled_at").toLocalDateTime(),
+            rs.getTimestamp("created_at").toLocalDateTime(),
+            rs.getTimestamp("updated_at").toLocalDateTime()
     );
 
     private static final RowMapper<CustomerOrderItem> ORDER_ITEM_ROW_MAPPER = (rs, rowNum) -> new CustomerOrderItem(
@@ -64,11 +70,12 @@ public class OrderRepository {
         return jdbcClient.sql("""
                         insert into customer_order (
                             order_no, user_id, contact_name, contact_phone, shipping_address, note,
-                            payment_method, status, subtotal, shipping_fee, total_amount
+                            payment_method, status, subtotal, shipping_fee, total_amount, paid_at
                         )
                         values (
                             :orderNo, :userId, :contactName, :contactPhone, :shippingAddress, :note,
-                            :paymentMethod, :status, cast(:subtotal as numeric), cast(:shippingFee as numeric), cast(:totalAmount as numeric)
+                            :paymentMethod, :status, cast(:subtotal as numeric), cast(:shippingFee as numeric), cast(:totalAmount as numeric),
+                            case when :status = 'PAID' then current_timestamp else null end
                         )
                         returning id
                         """)
@@ -122,7 +129,8 @@ public class OrderRepository {
     public List<CustomerOrder> findOrdersByUserId(Long userId) {
         return jdbcClient.sql("""
                         select id, order_no, user_id, contact_name, contact_phone, shipping_address, note,
-                               payment_method, status, subtotal, shipping_fee, total_amount, created_at
+                               payment_method, status, subtotal, shipping_fee, total_amount,
+                               paid_at, processing_at, shipped_at, completed_at, cancelled_at, created_at, updated_at
                         from customer_order
                         where user_id = :userId
                         order by created_at desc, id desc
@@ -135,7 +143,8 @@ public class OrderRepository {
     public Optional<CustomerOrder> findOrderByIdAndUserId(Long orderId, Long userId) {
         return jdbcClient.sql("""
                         select id, order_no, user_id, contact_name, contact_phone, shipping_address, note,
-                               payment_method, status, subtotal, shipping_fee, total_amount, created_at
+                               payment_method, status, subtotal, shipping_fee, total_amount,
+                               paid_at, processing_at, shipped_at, completed_at, cancelled_at, created_at, updated_at
                         from customer_order
                         where id = :orderId and user_id = :userId
                         """)
@@ -168,5 +177,47 @@ public class OrderRepository {
                 .param("slug", slug)
                 .query(Long.class)
                 .optional();
+    }
+
+    public Optional<CustomerOrder> findOrderById(Long orderId) {
+        return jdbcClient.sql("""
+                        select id, order_no, user_id, contact_name, contact_phone, shipping_address, note,
+                               payment_method, status, subtotal, shipping_fee, total_amount,
+                               paid_at, processing_at, shipped_at, completed_at, cancelled_at, created_at, updated_at
+                        from customer_order
+                        where id = :orderId
+                        """)
+                .param("orderId", orderId)
+                .query(ORDER_ROW_MAPPER)
+                .optional();
+    }
+
+    public List<CustomerOrder> findAllOrders() {
+        return jdbcClient.sql("""
+                        select id, order_no, user_id, contact_name, contact_phone, shipping_address, note,
+                               payment_method, status, subtotal, shipping_fee, total_amount,
+                               paid_at, processing_at, shipped_at, completed_at, cancelled_at, created_at, updated_at
+                        from customer_order
+                        order by created_at desc, id desc
+                        """)
+                .query(ORDER_ROW_MAPPER)
+                .list();
+    }
+
+    public void updateOrderStatus(Long orderId, String status) {
+        jdbcClient.sql("""
+                        update customer_order
+                        set status = :status,
+                            paid_at = case when :status = 'PAID' and paid_at is null then current_timestamp else paid_at end,
+                            processing_at = case when :status = 'PROCESSING' and processing_at is null then current_timestamp else processing_at end,
+                            shipped_at = case when :status = 'SHIPPED' and shipped_at is null then current_timestamp else shipped_at end,
+                            completed_at = case when :status = 'COMPLETED' and completed_at is null then current_timestamp else completed_at end,
+                            cancelled_at = case when :status = 'CANCELLED' and cancelled_at is null then current_timestamp else cancelled_at end,
+                            updated_at = current_timestamp
+                        where id = :orderId
+                        """)
+                .param("orderId", orderId)
+                .param("status", status)
+                .update();
     }
 }

@@ -6,7 +6,13 @@ values
     ('ROLE:WRITE', 'Manage roles', 'Allows creating and updating roles'),
     ('ROLE:ASSIGN', 'Assign permissions', 'Allows assigning permissions to users'),
     ('PRODUCT:READ', 'View products', 'Allows viewing product information'),
-    ('PRODUCT:WRITE', 'Manage products', 'Allows creating and updating products')
+    ('PRODUCT:WRITE', 'Manage products', 'Allows creating and updating products'),
+    ('PRODUCT:PUBLISH', 'Publish products', 'Allows changing product shelf status'),
+    ('PRODUCT:UPLOAD', 'Upload product assets', 'Allows uploading product assets'),
+    ('ORDER:READ', 'View orders', 'Allows viewing order information'),
+    ('ORDER:MANAGE', 'Manage orders', 'Allows progressing or cancelling any order'),
+    ('CART:READ', 'View carts', 'Allows viewing cart information'),
+    ('CART:WRITE', 'Manage carts', 'Allows updating cart information')
 on conflict (code) do nothing;
 
 insert into role (code, name, description)
@@ -27,10 +33,18 @@ insert into role_permission (role_id, permission_id)
 select r.id, p.id
 from role r
 join permission p on (
-    (r.code = 'ADMIN' and p.code in ('USER:READ', 'USER:WRITE', 'ROLE:READ', 'ROLE:WRITE', 'ROLE:ASSIGN', 'PRODUCT:READ', 'PRODUCT:WRITE'))
-    or (r.code = 'CUSTOMER' and p.code in ('USER:READ', 'PRODUCT:READ'))
+    (r.code = 'ADMIN' and p.code in (
+        'USER:READ', 'USER:WRITE', 'ROLE:READ', 'ROLE:WRITE', 'ROLE:ASSIGN',
+        'PRODUCT:READ', 'PRODUCT:WRITE', 'PRODUCT:PUBLISH', 'PRODUCT:UPLOAD',
+        'ORDER:READ', 'ORDER:MANAGE', 'CART:READ', 'CART:WRITE'
+    ))
+    or (r.code = 'CUSTOMER' and p.code in ('PRODUCT:READ', 'ORDER:READ', 'CART:READ', 'CART:WRITE'))
 )
 on conflict (role_id, permission_id) do nothing;
+
+delete from role_permission
+where role_id in (select id from role where code = 'CUSTOMER')
+  and permission_id in (select id from permission where code = 'USER:READ');
 
 insert into user_role (user_id, role_id)
 select u.id, r.id
@@ -42,7 +56,11 @@ on conflict (user_id, role_id) do nothing;
 insert into user_permission (user_id, permission_id)
 select u.id, p.id
 from app_user u
-join permission p on p.code in ('USER:READ', 'USER:WRITE', 'ROLE:READ', 'ROLE:WRITE', 'ROLE:ASSIGN', 'PRODUCT:READ', 'PRODUCT:WRITE')
+join permission p on p.code in (
+    'USER:READ', 'USER:WRITE', 'ROLE:READ', 'ROLE:WRITE', 'ROLE:ASSIGN',
+    'PRODUCT:READ', 'PRODUCT:WRITE', 'PRODUCT:PUBLISH', 'PRODUCT:UPLOAD',
+    'ORDER:READ', 'ORDER:MANAGE', 'CART:READ', 'CART:WRITE'
+)
 where u.username = 'admin'
 on conflict (user_id, permission_id) do nothing;
 

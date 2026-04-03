@@ -15,6 +15,12 @@ public record CustomerOrder(
         String subtotal,
         String shippingFee,
         String totalAmount,
-        LocalDateTime createdAt
+        LocalDateTime paidAt,
+        LocalDateTime processingAt,
+        LocalDateTime shippedAt,
+        LocalDateTime completedAt,
+        LocalDateTime cancelledAt,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {
 }

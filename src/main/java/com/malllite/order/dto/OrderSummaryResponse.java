@@ -9,6 +9,7 @@ public record OrderSummaryResponse(
         String shippingFee,
         String totalAmount,
         Integer totalQuantity,
-        String createdAt
+        String createdAt,
+        Boolean customerActionable
 ) {
 }
