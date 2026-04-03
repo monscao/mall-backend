@@ -9,6 +9,25 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: mall_db
+          POSTGRES_USER: monscao
+          POSTGRES_PASSWORD: monspass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U monscao -d mall_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/mall_db
+      SPRING_DATASOURCE_USERNAME: monscao
+      SPRING_DATASOURCE_PASSWORD: monspass
 
     steps:
       - name: Checkout
