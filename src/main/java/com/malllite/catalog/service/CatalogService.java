@@ -224,6 +224,7 @@ public class CatalogService {
         return new ProductCardResponse(
                 product.id(),
                 product.slug(),
+                catalogRepository.findDefaultSkuCodeByProductId(product.id()).orElse(null),
                 product.name(),
                 product.subtitle(),
                 product.brand(),

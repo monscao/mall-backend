@@ -5,6 +5,7 @@ import java.util.List;
 public record ProductCardResponse(
         Long id,
         String slug,
+        String defaultSkuCode,
         String name,
         String subtitle,
         String brand,

@@ -219,6 +219,19 @@ public class CatalogRepository {
                 .list();
     }
 
+    public Optional<String> findDefaultSkuCodeByProductId(Long productId) {
+        return jdbcClient.sql("""
+                        select sku_code
+                        from product_sku
+                        where product_id = :productId
+                        order by is_default desc, sale_price asc, id
+                        limit 1
+                        """)
+                .param("productId", productId)
+                .query(String.class)
+                .optional();
+    }
+
     public List<ProductAsset> findAssetsByProductId(Long productId) {
         return jdbcClient.sql("""
                         select id, product_id, image_url, alt_text, sort_order
