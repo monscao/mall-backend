@@ -23,4 +23,6 @@ auth:
   token-expiration-minutes: ${AUTH_TOKEN_EXPIRATION_MINUTES:120}
 
 app:
+  version: ${APP_VERSION:0.0.1-SNAPSHOT}
+  frontend-version: ${APP_FRONTEND_VERSION:0.1.0}
   upload-dir: ${APP_UPLOAD_DIR:uploads}
