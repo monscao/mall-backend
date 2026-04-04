@@ -6,6 +6,7 @@ import com.malllite.catalog.dto.CreateProductRequest;
 import com.malllite.catalog.dto.CreateProductSkuRequest;
 import com.malllite.catalog.dto.ProductCardResponse;
 import com.malllite.catalog.dto.ProductDetailResponse;
+import com.malllite.catalog.dto.ProductListResponse;
 import com.malllite.catalog.dto.ProductAssetResponse;
 import com.malllite.catalog.dto.ProductSkuResponse;
 import com.malllite.catalog.dto.UpdateAdminProductRequest;
@@ -39,11 +40,38 @@ public class CatalogService {
                 .toList();
     }
 
-    public List<ProductCardResponse> listProducts(String categoryCode, Boolean featuredOnly, String sort, Integer limit) {
-        return catalogRepository.findProducts(categoryCode, featuredOnly, normalizeSort(sort), normalizeLimit(limit))
+    public ProductListResponse listProducts(
+            String categoryCode,
+            Boolean featuredOnly,
+            String sort,
+            Integer limit,
+            String keyword,
+            Integer page,
+            Integer size
+    ) {
+        Integer normalizedPage = normalizePage(page);
+        Integer normalizedSize = normalizePageSize(limit != null ? limit : size);
+        long total = catalogRepository.countProducts(categoryCode, featuredOnly, normalizeKeyword(keyword));
+        int totalPages = total == 0 ? 0 : (int) Math.ceil((double) total / normalizedSize);
+        int safePage = totalPages == 0 ? 1 : Math.min(normalizedPage, totalPages);
+        int offset = (safePage - 1) * normalizedSize;
+
+        List<ProductCardResponse> items = catalogRepository
+                .findProducts(categoryCode, featuredOnly, normalizeSort(sort), normalizeKeyword(keyword), normalizedSize, offset)
                 .stream()
                 .map(this::toProductCardResponse)
                 .toList();
+
+        return new ProductListResponse(
+                items,
+                safePage,
+                normalizedSize,
+                total,
+                totalPages,
+                safePage > 1 && totalPages > 0,
+                totalPages > 0 && safePage < totalPages,
+                normalizeKeyword(keyword)
+        );
     }
 
     public List<AdminProductRowResponse> listAdminProducts() {
@@ -302,11 +330,25 @@ public class CatalogService {
         };
     }
 
-    private Integer normalizeLimit(Integer limit) {
-        if (limit == null || limit <= 0) {
+    private Integer normalizePage(Integer page) {
+        if (page == null || page <= 0) {
+            return 1;
+        }
+        return page;
+    }
+
+    private Integer normalizePageSize(Integer size) {
+        if (size == null || size <= 0) {
+            return 24;
+        }
+        return Math.min(size, 48);
+    }
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
             return null;
         }
-        return Math.min(limit, 24);
+        return keyword.trim();
     }
 
     private String normalizeSlug(String slug, String name) {

@@ -21,9 +21,9 @@ public class HomeService {
 
     public HomeResponse getHome() {
         List<CategoryResponse> featuredCategories = catalogService.listFeaturedCategories();
-        List<ProductCardResponse> featuredProducts = catalogService.listProducts(null, true, "featured", 4);
-        List<ProductCardResponse> hotProducts = catalogService.listProducts(null, null, "sales", 4);
-        List<ProductCardResponse> latestProducts = catalogService.listProducts(null, null, "latest", 4);
+        List<ProductCardResponse> featuredProducts = catalogService.listProducts(null, true, "featured", 4, null, 1, 4).items();
+        List<ProductCardResponse> hotProducts = catalogService.listProducts(null, null, "sales", 4, null, 1, 4).items();
+        List<ProductCardResponse> latestProducts = catalogService.listProducts(null, null, "latest", 4, null, 1, 4).items();
 
         ProductCardResponse heroProduct = featuredProducts.isEmpty() ? null : featuredProducts.getFirst();
 

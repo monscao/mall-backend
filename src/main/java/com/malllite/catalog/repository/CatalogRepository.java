@@ -6,6 +6,7 @@ import com.malllite.catalog.model.ProductAsset;
 import com.malllite.catalog.model.ProductSku;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.jdbc.core.simple.JdbcClient.StatementSpec;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -85,81 +86,46 @@ public class CatalogRepository {
                 .list();
     }
 
-    public List<Product> findProducts(String categoryCode, Boolean featuredOnly, String sort, Integer limit) {
-        String normalizedCategoryCode = normalize(categoryCode);
-        String orderBy = toOrderBy(sort);
-        Integer normalizedLimit = limit != null && limit > 0 ? limit : null;
-        String limitClause = normalizedLimit == null ? "" : " limit " + normalizedLimit;
+    public List<Product> findProducts(
+            String categoryCode,
+            Boolean featuredOnly,
+            String sort,
+            String keyword,
+            Integer limit,
+            Integer offset
+    ) {
+        String sql = """
+                select p.id, p.category_id, c.code as category_code, c.name as category_name,
+                       p.name, p.subtitle, p.slug, p.brand, p.cover_image, p.price_from, p.price_to,
+                       p.market_price, p.rating, p.sales_count, p.stock_status, p.tags,
+                       p.description, p.featured, p.on_shelf
+                from product p
+                join category c on c.id = p.category_id
+                where p.on_shelf = true
+                """
+                + buildProductFilterClause(categoryCode, featuredOnly, keyword)
+                + " order by " + toOrderBy(sort)
+                + " limit :limit offset :offset";
 
-        if (normalizedCategoryCode != null && featuredOnly != null) {
-            return jdbcClient.sql("""
-                            select p.id, p.category_id, c.code as category_code, c.name as category_name,
-                                   p.name, p.subtitle, p.slug, p.brand, p.cover_image, p.price_from, p.price_to,
-                                   p.market_price, p.rating, p.sales_count, p.stock_status, p.tags,
-                                   p.description, p.featured, p.on_shelf
-                            from product p
-                            join category c on c.id = p.category_id
-                            where p.on_shelf = true
-                              and c.code = :categoryCode
-                              and p.featured = :featuredOnly
-                            order by %s
-                            %s
-                            """.formatted(orderBy, limitClause))
-                    .param("categoryCode", normalizedCategoryCode)
-                    .param("featuredOnly", featuredOnly)
-                    .query(PRODUCT_ROW_MAPPER)
-                    .list();
-        }
-
-        if (normalizedCategoryCode != null) {
-            return jdbcClient.sql("""
-                            select p.id, p.category_id, c.code as category_code, c.name as category_name,
-                                   p.name, p.subtitle, p.slug, p.brand, p.cover_image, p.price_from, p.price_to,
-                                   p.market_price, p.rating, p.sales_count, p.stock_status, p.tags,
-                                   p.description, p.featured, p.on_shelf
-                            from product p
-                            join category c on c.id = p.category_id
-                            where p.on_shelf = true
-                              and c.code = :categoryCode
-                            order by %s
-                            %s
-                            """.formatted(orderBy, limitClause))
-                    .param("categoryCode", normalizedCategoryCode)
-                    .query(PRODUCT_ROW_MAPPER)
-                    .list();
-        }
-
-        if (featuredOnly != null) {
-            return jdbcClient.sql("""
-                            select p.id, p.category_id, c.code as category_code, c.name as category_name,
-                                   p.name, p.subtitle, p.slug, p.brand, p.cover_image, p.price_from, p.price_to,
-                                   p.market_price, p.rating, p.sales_count, p.stock_status, p.tags,
-                                   p.description, p.featured, p.on_shelf
-                            from product p
-                            join category c on c.id = p.category_id
-                            where p.on_shelf = true
-                              and p.featured = :featuredOnly
-                            order by %s
-                            %s
-                            """.formatted(orderBy, limitClause))
-                    .param("featuredOnly", featuredOnly)
-                    .query(PRODUCT_ROW_MAPPER)
-                    .list();
-        }
-
-        return jdbcClient.sql("""
-                        select p.id, p.category_id, c.code as category_code, c.name as category_name,
-                               p.name, p.subtitle, p.slug, p.brand, p.cover_image, p.price_from, p.price_to,
-                               p.market_price, p.rating, p.sales_count, p.stock_status, p.tags,
-                               p.description, p.featured, p.on_shelf
-                        from product p
-                        join category c on c.id = p.category_id
-                        where p.on_shelf = true
-                        order by %s
-                        %s
-                        """.formatted(orderBy, limitClause))
+        return bindProductFilterParams(jdbcClient.sql(sql), categoryCode, featuredOnly, keyword)
+                .param("limit", normalizeLimit(limit))
+                .param("offset", Math.max(offset == null ? 0 : offset, 0))
                 .query(PRODUCT_ROW_MAPPER)
                 .list();
+    }
+
+    public long countProducts(String categoryCode, Boolean featuredOnly, String keyword) {
+        String sql = """
+                select count(*)
+                from product p
+                join category c on c.id = p.category_id
+                where p.on_shelf = true
+                """
+                + buildProductFilterClause(categoryCode, featuredOnly, keyword);
+
+        return bindProductFilterParams(jdbcClient.sql(sql), categoryCode, featuredOnly, keyword)
+                .query(Long.class)
+                .single();
     }
 
     public List<Product> findAdminProducts() {
@@ -406,6 +372,65 @@ public class CatalogRepository {
 
     private String normalize(String value) {
         return value == null || value.isBlank() ? null : value;
+    }
+
+    private Integer normalizeLimit(Integer limit) {
+        if (limit == null || limit <= 0) {
+            return 24;
+        }
+        return limit;
+    }
+
+    private String buildProductFilterClause(String categoryCode, Boolean featuredOnly, String keyword) {
+        String normalizedCategoryCode = normalize(categoryCode);
+        String normalizedKeyword = normalize(keyword);
+        StringBuilder clause = new StringBuilder();
+
+        if (normalizedCategoryCode != null) {
+            clause.append(" and c.code = :categoryCode");
+        }
+
+        if (featuredOnly != null) {
+            clause.append(" and p.featured = :featuredOnly");
+        }
+
+        if (normalizedKeyword != null) {
+            clause.append("""
+                     and (
+                        lower(p.name) like lower(:keyword)
+                        or lower(coalesce(p.subtitle, '')) like lower(:keyword)
+                        or lower(coalesce(p.brand, '')) like lower(:keyword)
+                        or lower(coalesce(p.tags, '')) like lower(:keyword)
+                     )
+                    """);
+        }
+
+        return clause.toString();
+    }
+
+    private StatementSpec bindProductFilterParams(
+            StatementSpec statementSpec,
+            String categoryCode,
+            Boolean featuredOnly,
+            String keyword
+    ) {
+        StatementSpec bound = statementSpec;
+        String normalizedCategoryCode = normalize(categoryCode);
+        String normalizedKeyword = normalize(keyword);
+
+        if (normalizedCategoryCode != null) {
+            bound = bound.param("categoryCode", normalizedCategoryCode);
+        }
+
+        if (featuredOnly != null) {
+            bound = bound.param("featuredOnly", featuredOnly);
+        }
+
+        if (normalizedKeyword != null) {
+            bound = bound.param("keyword", "%" + normalizedKeyword + "%");
+        }
+
+        return bound;
     }
 
     private String toOrderBy(String sort) {

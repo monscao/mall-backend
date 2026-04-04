@@ -31,19 +31,34 @@ class CatalogControllerTests {
     void productsShouldSupportCategoryFiltering() throws Exception {
         mockMvc.perform(get("/api/catalog/products").param("categoryCode", "phones"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(greaterThan(0)))
-                .andExpect(jsonPath("$[0].categoryCode").value("phones"))
-                .andExpect(jsonPath("$[0].coverImage").exists());
+                .andExpect(jsonPath("$.items.length()").value(greaterThan(0)))
+                .andExpect(jsonPath("$.items[0].categoryCode").value("phones"))
+                .andExpect(jsonPath("$.items[0].coverImage").exists())
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.size").value(24));
     }
 
     @Test
     void productsShouldSupportSortAndLimit() throws Exception {
         mockMvc.perform(get("/api/catalog/products")
                         .param("sort", "sales")
-                        .param("limit", "2"))
+                        .param("size", "2"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].salesCount").exists());
+                .andExpect(jsonPath("$.items.length()").value(2))
+                .andExpect(jsonPath("$.items[0].salesCount").exists())
+                .andExpect(jsonPath("$.total").value(greaterThan(0)));
+    }
+
+    @Test
+    void productsShouldSupportKeywordSearchAndPagination() throws Exception {
+        mockMvc.perform(get("/api/catalog/products")
+                        .param("q", "nova")
+                        .param("page", "1")
+                        .param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.keyword").value("nova"))
+                .andExpect(jsonPath("$.hasNext").exists());
     }
 
     @Test

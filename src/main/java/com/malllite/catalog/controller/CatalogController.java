@@ -8,6 +8,7 @@ import com.malllite.catalog.dto.CategoryResponse;
 import com.malllite.catalog.dto.CreateProductRequest;
 import com.malllite.catalog.dto.ProductCardResponse;
 import com.malllite.catalog.dto.ProductDetailResponse;
+import com.malllite.catalog.dto.ProductListResponse;
 import com.malllite.catalog.dto.UpdateAdminProductRequest;
 import com.malllite.catalog.dto.UploadResponse;
 import com.malllite.catalog.service.CatalogService;
@@ -50,13 +51,16 @@ public class CatalogController {
     }
 
     @GetMapping("/products")
-    public List<ProductCardResponse> listProducts(
+    public ProductListResponse listProducts(
             @RequestParam(required = false) String categoryCode,
             @RequestParam(required = false) Boolean featured,
             @RequestParam(required = false, defaultValue = "featured") String sort,
-            @RequestParam(required = false) Integer limit
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false, defaultValue = "1") Integer page,
+            @RequestParam(required = false, defaultValue = "24") Integer size
     ) {
-        return catalogService.listProducts(categoryCode, featured, sort, limit);
+        return catalogService.listProducts(categoryCode, featured, sort, limit, q, page, size);
     }
 
     @GetMapping("/products/{slug}")
