@@ -20,6 +20,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Read backend version
+        id: version
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import xml.etree.ElementTree as ET
+          root = ET.parse("pom.xml").getroot()
+          ns = {"m": "http://maven.apache.org/POM/4.0.0"}
+          version = root.findtext("m:version", namespaces=ns)
+          print(f"value={version}")
+          PY
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -43,3 +54,33 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Deploy backend to EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            export GHCR_USER='${{ github.actor }}'
+            export GHCR_TOKEN='${{ secrets.GITHUB_TOKEN }}'
+            export BACKEND_VERSION='${{ steps.version.outputs.value }}'
+
+            cd /home/ec2-user/apps/deploy
+
+            if grep -q '^BACKEND_VERSION=' .env; then
+              sed -i "s/^BACKEND_VERSION=.*/BACKEND_VERSION=${BACKEND_VERSION}/" .env
+            else
+              echo "BACKEND_VERSION=${BACKEND_VERSION}" >> .env
+            fi
+
+            if ! grep -q '^FRONTEND_VERSION=' .env; then
+              echo "FRONTEND_VERSION=0.1.0" >> .env
+            fi
+
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            docker compose pull backend
+            docker compose up -d backend
+            docker image prune -f

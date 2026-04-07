@@ -12,7 +12,7 @@
 
     <groupId>com.malllite</groupId>
     <artifactId>mall-backend</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.2</version>
     <name>mall-backend</name>
     <description>Backend starter for an e-commerce mall system</description>
 
