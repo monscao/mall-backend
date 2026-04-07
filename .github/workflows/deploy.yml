@@ -6,47 +6,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: read
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Read backend version
-        id: version
+      - name: Deployment mode
         run: |
-          python - <<'PY' >> "$GITHUB_OUTPUT"
-          import xml.etree.ElementTree as ET
-          root = ET.parse("pom.xml").getroot()
-          ns = {"m": "http://maven.apache.org/POM/4.0.0"}
-          version = root.findtext("m:version", namespaces=ns)
-          print(f"value={version}")
-          PY
-
-      - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script_stop: true
-          script: |
-            set -e
-            export BACKEND_VERSION='${{ steps.version.outputs.value }}'
-
-            cd /home/ec2-user/apps/deploy
-
-            if grep -q '^BACKEND_VERSION=' .env; then
-              sed -i "s/^BACKEND_VERSION=.*/BACKEND_VERSION=${BACKEND_VERSION}/" .env
-            else
-              echo "BACKEND_VERSION=${BACKEND_VERSION}" >> .env
-            fi
-
-            if ! grep -q '^FRONTEND_VERSION=' .env; then
-              echo "FRONTEND_VERSION=0.1.0" >> .env
-            fi
-
-            docker compose pull backend
-            docker compose up -d backend
-            docker image prune -f
+          echo "Backend deploy is handled automatically by the EC2 poller."
+          echo "Push to main and wait about one minute for the server to sync and redeploy."

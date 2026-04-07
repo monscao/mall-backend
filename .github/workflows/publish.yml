@@ -54,30 +54,3 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-      - name: Deploy backend to EC2
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script_stop: true
-          script: |
-            set -e
-            export BACKEND_VERSION='${{ steps.version.outputs.value }}'
-
-            cd /home/ec2-user/apps/deploy
-
-            if grep -q '^BACKEND_VERSION=' .env; then
-              sed -i "s/^BACKEND_VERSION=.*/BACKEND_VERSION=${BACKEND_VERSION}/" .env
-            else
-              echo "BACKEND_VERSION=${BACKEND_VERSION}" >> .env
-            fi
-
-            if ! grep -q '^FRONTEND_VERSION=' .env; then
-              echo "FRONTEND_VERSION=0.1.0" >> .env
-            fi
-
-            docker compose pull backend
-            docker compose up -d backend
-            docker image prune -f
