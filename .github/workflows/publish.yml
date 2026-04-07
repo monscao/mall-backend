@@ -65,7 +65,7 @@ jobs:
           script: |
             set -e
             export GHCR_USER='${{ github.actor }}'
-            export GHCR_TOKEN='${{ secrets.GITHUB_TOKEN }}'
+            export GHCR_TOKEN='${{ github.token }}'
             export BACKEND_VERSION='${{ steps.version.outputs.value }}'
 
             cd /home/ec2-user/apps/deploy
