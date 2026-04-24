@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mall_db
+    username: monscao
+    password: ""
+    driver-class-name: org.postgresql.Driver
+
+auth:
+  jwt-secret: test-secret-0123456789abcdef0123456789abcdef
+  token-expiration-minutes: 120
+
+agent:
+  rate-limit:
+    enabled: false

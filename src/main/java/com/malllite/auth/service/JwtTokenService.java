@@ -27,6 +27,12 @@ public class JwtTokenService {
             @Value("${auth.jwt-secret}") String jwtSecret,
             @Value("${auth.token-expiration-minutes}") long tokenExpirationMinutes
     ) {
+        if (jwtSecret == null || jwtSecret.isBlank()) {
+            throw new IllegalStateException("AUTH_JWT_SECRET must be configured before starting the application");
+        }
+        if (jwtSecret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException("AUTH_JWT_SECRET must be at least 32 bytes long");
+        }
         this.secretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         this.tokenExpirationMinutes = tokenExpirationMinutes;
     }

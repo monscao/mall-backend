@@ -5,6 +5,7 @@ import com.malllite.auth.exception.UnauthorizedException;
 import com.malllite.common.api.ApiErrorResponse;
 import com.malllite.common.exception.BadRequestException;
 import com.malllite.common.exception.ResourceNotFoundException;
+import com.malllite.common.exception.TooManyRequestsException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -82,6 +83,14 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         return build(HttpStatus.PAYLOAD_TOO_LARGE, "Uploaded file is too large", request.getRequestURI());
+    }
+
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<ApiErrorResponse> handleTooManyRequests(
+            TooManyRequestsException exception,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.TOO_MANY_REQUESTS, exception.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(Exception.class)

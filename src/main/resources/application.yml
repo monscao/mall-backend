@@ -19,10 +19,20 @@ server:
   port: ${SERVER_PORT:8080}
 
 auth:
-  jwt-secret: ${AUTH_JWT_SECRET:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+  jwt-secret: ${AUTH_JWT_SECRET:}
   token-expiration-minutes: ${AUTH_TOKEN_EXPIRATION_MINUTES:120}
 
 app:
   version: ${APP_VERSION:0.0.1-SNAPSHOT}
   frontend-version: ${APP_FRONTEND_VERSION:0.1.0}
   upload-dir: ${APP_UPLOAD_DIR:uploads}
+
+agent:
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    model: ${OPENAI_MODEL:gpt-5.2}
+    endpoint: ${OPENAI_ENDPOINT:${CLIPROXYAPI_ENDPOINT:${LM_STUDIO_ENDPOINT:https://api.openai.com/v1/responses}}}
+  rate-limit:
+    enabled: ${AGENT_RATE_LIMIT_ENABLED:true}
+    max-requests: ${AGENT_RATE_LIMIT_MAX_REQUESTS:12}
+    window-seconds: ${AGENT_RATE_LIMIT_WINDOW_SECONDS:60}

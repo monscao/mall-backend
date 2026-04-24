@@ -157,6 +157,27 @@ public class CatalogRepository {
                 .optional();
     }
 
+    public List<Product> findRelatedProducts(String categoryCode, String excludeSlug, Integer limit) {
+        return jdbcClient.sql("""
+                        select p.id, p.category_id, c.code as category_code, c.name as category_name,
+                               p.name, p.subtitle, p.slug, p.brand, p.cover_image, p.price_from, p.price_to,
+                               p.market_price, p.rating, p.sales_count, p.stock_status, p.tags,
+                               p.description, p.featured, p.on_shelf
+                        from product p
+                        join category c on c.id = p.category_id
+                        where p.on_shelf = true
+                          and c.code = :categoryCode
+                          and p.slug <> :excludeSlug
+                        order by p.featured desc, p.sales_count desc, p.id
+                        limit :limit
+                        """)
+                .param("categoryCode", categoryCode)
+                .param("excludeSlug", excludeSlug)
+                .param("limit", normalizeLimit(limit))
+                .query(PRODUCT_ROW_MAPPER)
+                .list();
+    }
+
     public Optional<Product> findProductById(Long productId) {
         return jdbcClient.sql("""
                         select p.id, p.category_id, c.code as category_code, c.name as category_name,
